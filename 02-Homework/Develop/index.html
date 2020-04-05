@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
+      integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf"
+      crossorigin="anonymous"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <title>Work Day Scheduler</title>
+  </head>
+
+  <body>
+    <header class="jumbotron">
+      <h1 class="display-3">Work Day Scheduler</h1>
+      <p class="lead">A simple calendar app for scheduling your work day</p>
+      <p id="currentDay" class="lead"></p>
+    </header>
+    <div id="plannerContainer" class="container">
+      <!-- Timeblocks go here -->
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://momentjs.com/downloads/moment.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+  </body>
+
+  <script>
+    var hourActivities = loadObjArr();
+    makeHourRows();
+    showSchedule(hourActivities);
+
+    // display current day at top of screen \\
+    $("#currentDay").text(moment().format("MMMM Do YYYY, h:mm:ss a"));
+    $("#pastHour1").text(moment().subtract(1, "hours").format("h"));
+    $("#currentHour1").text(moment().format("h"));
+    $("#futureHour1").text(moment().add(1, "hours").format("h"));
+
+    function saveObjArr(saveData) {
+      if (saveData === null || saveData === "") {
+        localStorage.setItem("localPlannerObj", "[]");
+      } else {
+        localStorage.setItem("localPlannerObj", JSON.stringify(saveData));
+      }
+    }
+
+    function loadObjArr() {
+      var fileData = localStorage.getItem("localPlannerObj");
+      if (fileData === null) {
+        fileData = "[]";
+      }
+      var objFileData = JSON.parse(fileData);
+
+      return objFileData;
+    }
+
+    function makeSample() {
+      var plannerObj = [
+        { rowId: "2020040401", desc: "today is hour 0" },
+        { rowId: "2020040402", desc: "today is hour 2" },
+        { rowId: "2020040403", desc: "today is hour 3" },
+      ];
+
+      saveObjArr(plannerObj);
+    }
+
+    function makeHourRow(rowId, hour) {
+      $("#plannerContainer").append(`
+      <div class="row" id="${rowId}">
+          <div class="col-1 border">${hour}</div>
+          <div class="col-10 border border-secondary p-0 d-flex"> <input id="${rowId}-text" class="w-100" type="text"></div>
+          <div class="col-1 border bg-primary p-0 d-flex"> <button class="w-100" id="${rowId}-button" onclick="doSave(${rowId})"> Save </button> </div>
+      </div>
+      `);
+    }
+
+    function makeHourRows() {
+      $("#plannerContainer").empty();
+
+      for (i = 0; i < 24; i++) {
+        var currentTime = moment().startOf("day").add(i, "hours");
+        var rowId = currentTime.format("YYYYMMDDHH");
+        var hourName = currentTime.format("h a");
+        makeHourRow(rowId, hourName);
+      }
+    }
+
+    function doSave(localrowId) {
+      var textName = `${localrowId}-text`;
+      var textValue = $(`#${textName}`).val();
+      var rowItem = hourActivities.find((e) => e.rowId === localrowId);
+
+      if (rowItem === null || rowItem === undefined) {
+        // create one
+        var newObj = { rowId: localrowId, desc: textValue };
+        hourActivities.push(newObj);
+      } else {
+        // update current one
+        rowItem.desc = textValue;
+      }
+      saveObjArr(hourActivities);
+    }
+
+    function showSchedule(items) {
+
+      for (i = 0; i < 24; i++) {
+        var currentTime = moment().startOf("hour");
+        var rowTime = moment().startOf("day").add(i, "hours");
+        var rowId = rowTime.format("YYYYMMDDHH");
+        var currentRowId = currentTime.format("YYYYMMDDHH");
+        var hourName = rowTime.format("h a");
+        var textBox = $(`#${rowId}-text`);
+
+        var item = items.find(e => e.rowId == rowId);
+
+        // change colors
+        if (rowId < currentRowId) {
+          textBox.css("background-color", "lightgray");
+        } else if (rowId === currentRowId) {
+          textBox.css("background-color", "lightgreen");
+        } else if (rowId > currentRowId) {
+          textBox.css("background-color", "lightblue");
+        }
+
+        
+        console.log(`item: ${item}  textBox: ${textBox}`)
+        console.log(items)
+
+        // set text
+        if (item === null || item === undefined) {
+          textBox.val("")
+        } else {
+        textBox.val(item.desc)
+        }
+
+      }
+    }
+
+  </script>
+</html>
